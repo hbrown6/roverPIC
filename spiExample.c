@@ -56,18 +56,11 @@ void get_buffer(){
    
 }
 
-
-
 int main(int argc, char** argv) {
- //   TRISAbits.TRISA4 = 0;
-    
     AD1PCFG = 0xffff;
     DDPCONbits.JTAGEN=0;
     spi_init();
-    
-  //  TRISBbits.TRISB8 = 0;
     LATBbits.LATB8 = 0;
-    
     get_buffer();
     
 //    char c = spi_write(0x90);
@@ -77,11 +70,8 @@ int main(int argc, char** argv) {
 //          spi_write(0x0);  
 //            spi_write(0x0);  
 //              spi_write(0x0);  
-  
     LATBbits.LATB8=1;
     while(1);
     return 0;
-    
-   
 }
 
