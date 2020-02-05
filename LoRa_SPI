@@ -13,6 +13,10 @@
 void spi_init(){
     TRISBbits.TRISB8 = 0;
     LATBbits.LATB8 = 1;
+    
+    TRISBbits.TRISB14 = 0;
+    TRISFbits.TRISF4 = 0;
+    TRISFbits.TRISF5 = 1;
     // SPI Pins
     // Disable Interrupts
     IEC1bits.SPI4EIE = 0;
@@ -52,7 +56,9 @@ int spi_write(int c){
 
 int main(int argc, char** argv) {
     spi_init();
-    spi_write(0xAA);
-    while(1);
+    
+    while(1){
+        spi_write(0xAA);
+    };
     return 0;
 }
