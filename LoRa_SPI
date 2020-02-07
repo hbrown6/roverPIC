@@ -48,6 +48,7 @@ int spi_read(int reg_name){
     reg_name = reg_name & 0x7F;
     int shifter = 0x00;
     int shifted = (reg_name << 8) | shifter;
+    
     SPI4BUF = shifted;                // Write to the buffer
     while (!SPI4STATbits.SPIRBF);
     return SPI4BUF;
@@ -56,8 +57,10 @@ int spi_read(int reg_name){
 int spi_write(int reg_name,int val){
     reg_name = reg_name | 0x80;
     int shifted = (reg_name << 8) | val;
+    
     SPI4BUF = shifted;                // Write to the buffer
     while (!SPI4STATbits.SPIRBF);
+
     return SPI4BUF;
 }
 
@@ -70,8 +73,8 @@ int main(void) {
     spi_init();
     
     while(1){
-        spi_write(0x01,0x02);       //(register,value)
-        spi_write(0x01,0x02);
+        spi_write(0x01,0x80);       //(register,value) - write LoRa mode 
+        spi_read(0x01);
         while(1);
     };
     return 0;
