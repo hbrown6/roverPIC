@@ -26,10 +26,10 @@
 //#pragma config POSCMOD = HS // Primary oscillator mode
 #pragma config FNOSC = FRCPLL           // Oscillator Selection Bits (Fast RC Osc with PLL)
 #pragma config FPLLIDIV = DIV_2         // PLL Input Divider (2x Divider)
-#pragma config FPLLMUL = MUL_20         // PLL Multiplier (20x Multiplier)
+#pragma config FPLLMUL = MUL_16         // PLL Multiplier (20x Multiplier)
 //#pragma config UPLLIDIV = DIV_12        // USB PLL Input Divider (12x Divider)
 //#pragma config UPLLEN = OFF             // USB PLL Enable (Disabled and Bypassed)
-#pragma config FPLLODIV = DIV_1       // System PLL Output Clock Divider (PLL Divide by 2)
+#pragma config FPLLODIV = DIV_8       // System PLL Output Clock Divider (PLL Divide by 2)
 
 // DEVCFG1
 
@@ -37,7 +37,7 @@
 #pragma config IESO = ON                // Internal/External Switch Over (Enabled)
 #pragma config POSCMOD = OFF           // Primary Oscillator Configuration (Primary osc disabled)
 #pragma config OSCIOFNC = OFF           // CLKO Output Signal Active on the OSCO Pin (Disabled)
-#pragma config FPBDIV = DIV_4           // Peripheral Clock Divisor (Pb_Clk is Sys_Clk/1)
+#pragma config FPBDIV = DIV_2           // Peripheral Clock Divisor (Pb_Clk is Sys_Clk/1)
 #pragma config FCKSM = CSECME           // Clock Switching and Monitor Selection (Clock Switch Disable, FSCM Disabled)
 #pragma config WDTPS = PS1048576        // Watchdog Timer Postscaler (1:1048576)
 #pragma config FWDTEN = OFF             // Watchdog Timer Enable (WDT Disabled (SWDTEN Bit Controls))
@@ -54,4 +54,3 @@
 
 #include <xc.h>
 #endif	/* CONFIG_H */
-
