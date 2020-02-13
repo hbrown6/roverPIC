@@ -10,12 +10,18 @@
 #include <xc.h>
 #include "config.h"
 
+//SPI functional
+//need to get the timer interrupt to work, for manual reset. pin not going low (B12)
+
+
+
 void spi_init(){
     TRISBbits.TRISB8 = 0;
     TRISBbits.TRISB14 = 0;
     TRISFbits.TRISF4 = 0;
     TRISFbits.TRISF5 = 1;
-    //LATFbits.LATF5 = 0;
+    TRISBbits.TRISB12 = 0;
+    LATBbits.LATB12 = 0;
     // SPI Pins
     // Disable Interrupts
     IEC1bits.SPI4EIE = 0;
@@ -75,14 +81,68 @@ void delay(int ber){
     for(num = 1; num < ber; num++);
 }
 
+void Manual_R(void){
+    LATBbits.LATB12 = 0;
+    T1CONbits.TON = 1;
+}
+
+void timerconfig(){
+    T1CONbits.TON = 0;          //Disable timer while config
+    T1CONbits.TCS = 0;          //Use internal clock
+    T1CONbits.TGATE = 0;        //clock gating disable
+    T1CONbits.TCKPS = 0b00;     //prescaler 1:1
+    TMR1 = 0;                   //reset timer
+    PR1 = 1000;              //period length
+    IPC0bits.INT0IP = 1;          //interrupt priority level
+    IFS0bits.T1IF = 0;          //clear flag
+    IEC0bits.T1IE = 1;          //timer interrupt
+    T1CONbits.TON = 0;          //timer off - to begin with
+}
+
+void __attribute__((__interrupt__,no_auto_psv)) _T1Interrupt(void){
+    TMR1 = 0;
+    LATBbits.LATB12 = 1;
+    T1CONbits.TON = 0;
+    IFS0bits.T1IF = 0;      //clears the NC interrupt
+}
+
+void SPI_LoRa_Setup(){
+    spi_write(0x01,0x80);
+    int ack = spi_read(0x01);
+    spi_write(0x0E,0x00);
+    spi_write(0x0F,0x00);
+    spi_write(0x01,0x80);
+    spi_write(0x1D,0x72);
+    spi_write(0x1E,0x74);
+    spi_write(0x26,0x00);
+    spi_write(0x20,0x00);
+    spi_write(0x21,0x08);
+    spi_write(0x06,0x6C);
+    spi_write(0x07,0x80);
+    spi_write(0x08,0x00);
+    //makes sense^^^
+    spi_write(0x4D,0x04);
+    spi_write(0x09,0x8C);
+    //Set the resolution of the carrier f
+    spi_write(0x06,0xE4);
+    spi_write(0x07,0xC0);
+    spi_write(0x08,0x00);
+    //
+    spi_write(0x4D,0x07);
+    spi_write(0x09,0x8F);
+    spi_write(0x01,0x05);
+    spi_write(0x40,0x00);
+    
+    //spi_write(0x,0x);         -- copy the rest of the arduino spi and translate. What does writing to 0x4x do?
+
+}
+
 int main(void) {
     spi_init();
-    
-    //while(1){
-    
-        spi_write(0x01,0x80);       //(register,value) - write LoRa mode
-        spi_read(0x01);
-        //while(1);
-    //};
+    timerconfig();
+    Manual_R();
+
+    SPI_LoRa_Setup();
+    while(1);
     return 0;
 }
