@@ -106,7 +106,7 @@ void __attribute__((__interrupt__,no_auto_psv)) _T1Interrupt(void){
     IFS0bits.T1IF = 0;      //clears the NC interrupt
 }
 
-void SPI_LoRa_Setup(){
+void SPI_LoRa_Setup(){          //TX arduino 
     spi_write(0x01,0x80);
     int ack = spi_read(0x01);
     spi_write(0x0E,0x00);
