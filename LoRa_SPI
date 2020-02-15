@@ -11,7 +11,7 @@
 #include "config.h"
 
 //SPI functional
-//need to get the timer interrupt to work, for manual reset. pin not going low (B12)
+//need to get the timer interrupt to work, for manual reset. Pin (B9) will go low, but never enters into the service routine to set the pin back high.
 
 
 
@@ -20,8 +20,8 @@ void spi_init(){
     TRISBbits.TRISB14 = 0;
     TRISFbits.TRISF4 = 0;
     TRISFbits.TRISF5 = 1;
-    TRISBbits.TRISB12 = 0;
-    LATBbits.LATB12 = 0;
+    TRISBbits.TRISB9 = 0;
+    LATBbits.LATB9 = 0;
     // SPI Pins
     // Disable Interrupts
     IEC1bits.SPI4EIE = 0;
@@ -82,11 +82,14 @@ void delay(int ber){
 }
 
 void Manual_R(void){
-    LATBbits.LATB12 = 0;
+    LATBbits.LATB9 = 0;
     T1CONbits.TON = 1;
 }
 
 void timerconfig(){
+    __builtin_enable_interrupts();  // enable global interrupts
+    INTCONbits.MVEC = 1;            // enable vector interrupts
+    
     T1CONbits.TON = 0;          //Disable timer while config
     T1CONbits.TCS = 0;          //Use internal clock
     T1CONbits.TGATE = 0;        //clock gating disable
@@ -101,39 +104,50 @@ void timerconfig(){
 
 void __attribute__((__interrupt__,no_auto_psv)) _T1Interrupt(void){
     TMR1 = 0;
-    LATBbits.LATB12 = 1;
+    LATBbits.LATB9 = 1;
     T1CONbits.TON = 0;
     IFS0bits.T1IF = 0;      //clears the NC interrupt
 }
+// INTERRUPT SERVICE ROUTINE USING VECTOR INTERRUPTS
+/*
+void __ISR (4, IPL7SRS) Timer1Handler(void){
+    TMR1 = 0;
+    LATBbits.LATB9 = 1;
+    T1CONbits.TON = 0;
+    IFS0bits.T1IF = 0;      //clears the NC interrupt
+}
+*/
 
 void SPI_LoRa_Setup(){          //TX arduino 
     spi_write(0x01,0x80);
     int ack = spi_read(0x01);
-    spi_write(0x0E,0x00);
-    spi_write(0x0F,0x00);
-    spi_write(0x01,0x80);
-    spi_write(0x1D,0x72);
+    spi_write(0x0E,0x00);       // Config RSSI, 2 samples used
+    spi_write(0x0F,0x00);       // Sets RSSI collision threshold to 0 dB
+    spi_write(0x01,0x80);       
+    spi_write(0x1D,0x72);       // measured frequency offset
     spi_write(0x1E,0x74);
-    spi_write(0x26,0x00);
-    spi_write(0x20,0x00);
-    spi_write(0x21,0x08);
-    spi_write(0x06,0x6C);
-    spi_write(0x07,0x80);
-    spi_write(0x08,0x00);
+    spi_write(0x26,0x00);       // sets preamble size to be 0
+    spi_write(0x20,0x00);       // disables TimeoutRxRssi
+    spi_write(0x21,0x08);       // Timeout interrupt generated 8*16*T_bit after switching to Rx mode if Rssi interrupt does not occur
+    spi_write(0x06,0x6C);       // Setting RF carrier frequency
+    spi_write(0x07,0x80);       
+    spi_write(0x08,0x00);       
     //makes sense^^^
-    spi_write(0x4D,0x04);
-    spi_write(0x09,0x8C);
+    spi_write(0x4D,0x04);       // keeping default value of PA_BOOST 
+    spi_write(0x09,0x8C);       // RegPaConfig
     //Set the resolution of the carrier f
-    spi_write(0x06,0xE4);
+    spi_write(0x06,0xE4);       
     spi_write(0x07,0xC0);
     spi_write(0x08,0x00);
     //
-    spi_write(0x4D,0x07);
-    spi_write(0x09,0x8F);
-    spi_write(0x01,0x05);
-    spi_write(0x40,0x00);
+    spi_write(0x4D,0x07);       // Changing value of PA_BOOST
+    spi_write(0x09,0x8F);       // RegPaConfig
+    spi_write(0x01,0x05);       // Access Low Freq Mode registers, Stdby mode
+    spi_write(0x40,0x00);       // Mapping pins?
+    spi_write(0x0D,0x00);
+    //begins FIFO input/output
     
-    //spi_write(0x,0x);         -- copy the rest of the arduino spi and translate. What does writing to 0x4x do?
+    //spi_write(0x,0x); 
 
 }
 
