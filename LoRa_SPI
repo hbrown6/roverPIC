@@ -9,8 +9,17 @@
 #include <xc.h>
 #include "config.h"
 #include <sys/attribs.h>
+#include <stdint.h>
 
-//need to get the timer interrupt to work, for manual reset. Pin (B9) will go low, but never enters into the service routine to set the pin back high.
+#define RF95_Max_Payload_Len 255
+#define RF95_Header_Len 4
+#define RF95_Max_Message_Len  (RF95_Max_Payload_Len - RF95_Header_Len) 
+// This is the address that indicates a broadcast
+#define RH_BROADCAST_ADDRESS 0xFF 
+#define _txHeaderTo RH_BROADCAST_ADDRESS
+#define _txHeaderFrom RH_BROADCAST_ADDRESS
+#define _txHeaderId 0
+#define _txHeaderFlags 0
 
 void spi_init(){
     DDPCONbits.JTAGEN = 0;
@@ -71,6 +80,20 @@ int spi_write(int reg_name,int val){
     
     SPI4BUF = shifted;                // Write to the buffer
     while (!SPI4STATbits.SPIRBF);
+    return SPI4BUF;
+}
+
+int spi_burst_write(int reg_name, const uint8_t* data, uint8_t len){
+    reg_name = reg_name | 0x80;
+    uint8_t to_send[] = {(reg_name << 8)};
+    while(len--){
+        to_send[] = {to_send *data++};
+    }
+    //uint8_t address[] = {reg_name << 8};
+    //uint8_t to_send[] = {address data};
+    
+    SPI4BUF = to_send;
+    while(!SPI4STATbits.SPIRBF)
     return SPI4BUF;
 }
 
@@ -154,6 +177,31 @@ int Check_Rx(void){
     int RegFifoRxCurrentAddr = spi_read(0x10);
     spi_write(0x0D,RegFifoRxCurrentAddr);
     //now you are ready to listen!
+}
+
+int transmit(uint8_t message){
+    int length = sizeof(message);
+    if (length > RF95_Max_Message_Len){
+        return 1;
+    }
+    
+    //waitPacketSent();  //Make sure that the chip is ready
+    spi_write(0x01, 0x01); // Set Mode to Idle
+    spi_write(0x0D, 0x00); // Set FIFO pointer to zero
+    
+    // Write all of the headers to the FIFO if we want to do that
+    spi_write(0x00, _txHeaderTo);
+    spi_write(0x00, _txHeaderFrom);
+    spi_write(0x00, _txHeaderId);
+    spi_write(0x00, _txHeaderFlags);
+    
+    // Write message
+    //spi_burst_write();
+    
+    //Put in Transmit Mode using register 0x01 to send message
+    //spi_write(0x01, 0x03); ?
+    
+    return 0;
 }
 
 int main(void) {
