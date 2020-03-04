@@ -10,6 +10,7 @@
 #include "config.h"
 #include <sys/attribs.h>
 #include <stdint.h>
+#include <string.h>
 
 #define RF95_Max_Payload_Len 255
 #define RF95_Header_Len 4
@@ -177,7 +178,30 @@ int RX(void){
     int RegRxNbBytes = spi_read(0x13);
     int RegFifoRxCurrentAddr = spi_read(0x10);
     spi_write(0x0D,RegFifoRxCurrentAddr);
+    
+    
     //now you are ready to listen!
+    /*
+    int i = 0;
+    int Ans = 0;
+    for(i=1; i < RegRxNbBytes;i++){
+        RegFifoRxCurrentAddr = RegFifoRxCurrentAddr & 0x7F;
+        int shifter = 0x00;
+        int shifted = (RegFifoRxCurrentAddr << 8) | shifter;
+    
+        SPI4BUF = shifted;                // Write to the buffer
+        while (!SPI4STATbits.SPIRBF); 
+        //char Ans[] = {Ans, (char) SPI4BUF};//concatenate(Ans,SPI4BUF);
+    }
+     * */
+    return Ans;
+}
+
+int concatenate(unsigned x, unsigned y) {
+    unsigned pow = 10;
+    while(y >= pow)
+        pow *= 10;
+    return x * pow + y;        
 }
 
 int TX(const char* message, int length){
@@ -201,13 +225,14 @@ int TX(const char* message, int length){
         send_byte = *message++;
         spi_write(FIFO_buffer, send_byte);
     }
+    spi_write(0x22,0x20);
     //Put in Transmit Mode using register 0x01 to send message
     spi_write(0x01, 0x03);
     int status;
     int transmit = 1;
     while(transmit){
         status = spi_read(0x12);
-        if (status & 0b00000100){
+        if (status & 0b00001000){
             transmit = 0;
         }
     }
@@ -220,13 +245,14 @@ int main(void) {
     timerconfig();
     Manual_R();
     SPI_LoRa_Setup();
+    /*
     while(1){
-        char payload[20] = "Hello World! I work!";
+        char payload[20] = "123456789ASDFGHJKLPO";
         TX(payload, 20);
     }
-    //Check_Rx();
+     * */
+    int powerplay[] = RX();
+    TX(powerplay, 20);
     
-    
-    //while(1);
     return 0;
 }
